@@ -9,6 +9,7 @@
 (def xCorrection -400)
 (def yCorrection 140)
 (def groupRef (atom nil))
+(def previousGroupRef (atom nil))
 
 ;; -------------------------
 ;; Views
@@ -68,7 +69,7 @@
       (draw-shape ctx shape)
       (draw-outline group))))
 
-;; Handles the mouseclicks. Trigger a canvas clear and redraw on every mouseclick
+;; Handles the mouseclicks. Trigger a canvas clear and redraw only on group ref change for performance reasons
 (defn handle-click [event]
   (let [canvas (.getElementById js/document "my-canvas")
         xCanvas (.-clientX event)
@@ -93,10 +94,14 @@
                      (>= yCanvas (+ y yCorrection (- radius)))
                      (<= yCanvas (+ y yCorrection radius)))
             (reset! groupRef group)))))
-    ;; Clear the canvas
-    (.clearRect (.getContext canvas "2d") 0 0 (.-width canvas) (.-height canvas))
+    ;; Only clear and redraw if the groupRef value has changed
+    (when (not= @groupRef @previousGroupRef)
+      ;; Clear the canvas
+      (.clearRect (.getContext canvas "2d") 0 0 (.-width canvas) (.-height canvas))
     ;; Redraw everything
-    (render-shapes)))
+      (render-shapes))
+    ;; Store the current groupRef value as the new previousGroupRef
+    (reset! previousGroupRef @groupRef)))
 
 (defn home-page []
    [:canvas {:id "my-canvas"
